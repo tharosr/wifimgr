@@ -1,0 +1,20 @@
+Wifi Manager 0.3
+
+* Correcciones en los mensajes mostrados
+
+* En la verificaciones iniciales, se comprueba que exista un adaptador inalámbrico. Si existe mas de uno, se muestra el menú para elegir cuál usar
+
+* Corrección en el tratamiento de los argumentos de línea de comandos
+
+* Correcciones en la verificación de la asociación
+
+* Correcciones en el cálculo del hash
+
+* Correcciones en la configuración  de redes ocultas y/abiertas
+
+* Las tarjetas inalámbricas ahora se buscan en /sys/class/net, que es estándar
+
+* Actualización de comandos:
+    iwconfig -> iw
+    ifconfig -> ip
+    
