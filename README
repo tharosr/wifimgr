@@ -1,4 +1,4 @@
-Wifi Manager 0.3rc
+Wifi Manager 0.23b
 
 Este programa es un gestor de redes inalámbricas para consola.
 El objetivo del programa es gestionar de forma rápida y simple la conexión inalámbrica desde la consola, a la vez que es mi primer programa en Python,
@@ -61,7 +61,7 @@ USO
 
     Para ejecutarlo: ./wifimgr.py
 
-    Hay una forma mas práctica y es creando un enlace blanco. Hay un archivo que se llama wifimgr.sh y es un simple lanzador. Ese archivo, tiene una
+    Hay una forma mas práctica y es creando un enlace blando. Hay un archivo que se llama wifimgr.sh y es un simple lanzador. Ese archivo, tiene una
     variable llamada ruta. Esa variable debe contener la ruta completa al archivo wifimgr.py, por ejemplo:
 
     	ruta="/home/<usuario>/Documentos/apps/"
