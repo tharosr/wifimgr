@@ -1,5 +1,7 @@
 Wifi Manager 0.3
 
+* Reducción al máximo de los comandos necesarios
+
 * Correcciones en los mensajes mostrados
 
 * En la verificaciones iniciales, se comprueba que exista un adaptador inalámbrico. Si existe mas de uno, se muestra el menú para elegir cuál usar
