@@ -74,7 +74,7 @@ USO
 
 OPCIONES
 
-    -a, --autoconectar
+    -a
     	Sirve para establecer si la autoconexión se activa o no. Por defecto, viene activada y se puede modificar en config.ini.
     	Sus valores pueden ser true o false.
     -h
