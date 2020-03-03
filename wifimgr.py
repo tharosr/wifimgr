@@ -33,7 +33,7 @@ def verificacion():
     
     print("Verificando aplicaciones necesarias...", end="")
     sys.stdout.flush()
-    sleep (1)
+    
     faltantes = []
     for item in lista_apps:
         try:
@@ -55,48 +55,27 @@ def verificacion():
         salir()
     print(Fore.GREEN + " ok" + Fore.WHITE)
     
-    # cuando se implemente el modificador -h de CLI, en este punto deberá cargarse la configuración
-    
-    buscar_tarjetas_red()
-    mostrar_tarjetas_red()
     return 0
 
 def cargar_configuracion(argv):
     """ Carga la configuración de config.ini y lee los parámetros de la línea de comandos.
     Luego actualiza las variables leídas del config en función de los parámetros pasados por línea de comandos, que tienen prioridad.
-    
-    Básicamente, en este momento, el único modificador válido es -a (o --autoconectar), que puede ser true o false.
     """
     global AUTOCONECTAR
     global AUTOCONECTAR_PRIORIDAD
     global supplicant_conf
+    global default_nic
+    global verif_conexion
+    # si hubo error en los argumentos de CLI
+    error = False
     
     print("Cargando configuración...", end="")
     sys.stdout.flush()
-    sleep(1)
-    
-    # leer los modificadores de línea de comandos
-    try: 
-        opts, args = getopt.getopt(argv,"ha:n:",[])
-    except getopt.GetoptError:
-        print(Fore.RED + " error" + Fore.WHITE)
-        print ('wifimgr.py [-a (true/false)]')
-        salir()
-            
-    for opt, arg in opts:
-        if (opt == '-h'):
-            print ('Modo de uso:\n\n\twifimgr.py [-a (true/false)]\n\nOpciones:\n\n-a\tIndica si usar o no la función de autoconectar omitiendo la configuración.\n\t\t\tSi es true, se usará la autoconexión para cualquier red ya configurada dentro del\n\t\t\talcance. Si es false, no se usará la autoconexión.')
-            salir()
-        elif (opt == '-a'):
-            if (arg.capitalize() != "True") and (arg.capitalize() != "False"):
-                 print(Fore.RED + " error" + Fore.WHITE)
-                 print ('Modo de uso:\n\n\twifimgr.py [-a (true/false)]\n\nOpciones:\n\n-a\tIndica si usar o no la función de autoconectar omitiendo la configuración.\n\t\t\tSi es true, se usará la autoconexión para cualquier red ya configurada dentro del\n\t\t\talcance. Si es false, no se usará la autoconexión.')
-                 salir()
-            AUTOCONECTAR_PRIORIDAD = arg.capitalize()
-    
-    
     
     # leer y cargar el archivo de configuración
+    # esta es una forma poco ortodoxa de hacerlo
+    # hay un módulo dedicado a esto pero eso requiere que el archivo ini tenga un formato determinado
+    # Ya que se trata también de un programa "educativo", lo hice esta manera para simplificar 
     try: fp = open("config.ini", "r")
     except:
         print(Fore.RED + " error" + Fore.WHITE)
@@ -115,11 +94,44 @@ def cargar_configuracion(argv):
                 if (parametro == "autoconectar"):
                     if (valor.capitalize() == "True"): AUTOCONECTAR = True
                     else: AUTOCONECTAR = False
-                elif (parametro == "supplicant_conf"):
-                    supplicant_conf = valor.strip()
+                elif (parametro == "supplicant_conf"): supplicant_conf = valor.strip()
+                elif (parametro == "default_nic"): default_nic = valor.strip()
+                elif (parametro == "verificar_conexion"):
+                    if (valor.capitalize() == "True"): verif_conexion = True
+                    else: verif_conexion = False
+                    
     fp.close()
+    
+    # leer los modificadores de línea de comandos
+    try: 
+        opts, args = getopt.getopt(argv,"ha:n:t:",[])
+    except getopt.GetoptError:
+        print(Fore.RED + " error" + Fore.WHITE)
+        print ('wifimgr.py [-a (true/false)]')
+        salir()
+            
+    for opt, arg in opts:
+        # ayuda
+        if (opt == '-h'): error = True
+        # autoconectar
+        elif (opt == '-a'):
+            if (arg.capitalize() != "True") and (arg.capitalize() != "False"): error = True
+            else: AUTOCONECTAR_PRIORIDAD = arg.capitalize()
+        # verificar conexion
+        elif (opt == "-n"):
+            if (arg.capitalize() != "True") and (arg.capitalize() != "False"): error = True
+            else: verif_conexion = arg.capitalize()
+        # NIC 
+        elif (opt == "-t"): default_nic = arg
+        
+        if (error):
+            print(Fore.RED + " error" + Fore.WHITE)
+            print ('Ver el archivo README.txt')
+            salir()
+
     print(Fore.GREEN + " ok" + Fore.WHITE)
     if (AUTOCONECTAR_PRIORIDAD != -1): AUTOCONECTAR = AUTOCONECTAR_PRIORIDAD
+    
     return 0
 
 def informacion_usuario():
@@ -140,7 +152,7 @@ def mostrar_info_usuario():
     print(Fore.WHITE + "Usuario: " + Fore.YELLOW, end="")
     print(info_usuario['usuario'] + " (" + str(info_usuario['id']) + ")  |  ", end="")
     print(Fore.WHITE + "Grupo: " + Fore.YELLOW + str(info_usuario['grupo']) + Fore.WHITE)
-
+    print()
 
 def buscar_tarjetas_red():
     """ Busca las tarjetas de red inalámbricas en el sistema
@@ -149,7 +161,7 @@ def buscar_tarjetas_red():
     
     print("Buscando adaptadores inalámbricos...", end="")
     sys.stdout.flush()
-    sleep (1)
+    
     
     dir_class_net = "/sys/class/net"
     try: tmp = sp.run(['ls', dir_class_net], stdout = sp.PIPE, stderr = sp.PIPE)
@@ -179,15 +191,7 @@ def buscar_tarjetas_red():
             salir()
         
         if (tmp.returncode == 0): tarjetas_disponibles.append(tarjeta)
-#        else:
-#            print(Fore.YELLOW + " aviso: " + str(tmp.returncode) + Fore.WHITE)
-#            if (debug):
-#                print("No se pudo obtener la información de '" + str(tarjeta) + "'")
-#                print("Código de error del comando 'iw dev " + str(tarjeta) + " info': " + str(tmp.returncode))
-#                print("Mensaje de error: " + str(tmp.stderr.decode()))
-                
-#    if (len(tarjetas_disponibles) == 1): info_red['tarjeta'] = tarjetas_disponibles[0]
-#    elif (len(tarjetas_disponibles) < 1):
+
     if (len(tarjetas_disponibles) < 1):
         print(Fore.RED + " error: " + str(tmp.returncode) + Fore.WHITE)
         if (debug):
@@ -203,6 +207,10 @@ def mostrar_tarjetas_red():
     Si hay mas de una, muestra un selector
     """
     global info_red
+    
+    if (default_nic != 0):
+        info_red['tarjeta'] = default_nic
+        return 0
     
     if (len(tarjetas_disponibles) == 1): info_red['tarjeta'] = tarjetas_disponibles[0]
     elif (len(tarjetas_disponibles) > 1):
@@ -231,7 +239,7 @@ def informacion_tarjeta_red():
     print("Obteniendo información de la tarjeta de red...", end="")
     sys.stdout.flush()
     
-    sleep (1)
+    
     global info_red
     salida = ""
     tmp = ""
@@ -350,7 +358,7 @@ def reiniciar_servicios_red():
         
     print("Reiniciando los servicios de red...", end="")
     sys.stdout.flush()
-    sleep (1)
+    
 
     desconectar()
     desasociar()
@@ -438,7 +446,7 @@ def activar_tarjeta():
     
     print("Activando la tarjeta de red...", end="")
     sys.stdout.flush()
-    sleep (1)
+    
     
     desconectar()
     desasociar()
@@ -485,7 +493,7 @@ def escanear_redes():
 
     print(Fore.WHITE + "Escaneando las redes...", end="")
     sys.stdout.flush()
-    sleep (1)
+    
     
     global lista_redes
 
@@ -752,7 +760,7 @@ def conectar():
         # intentar conexion para verificar la clave
         print("Intentando asociar a " + str(essid) + "...", end="")
         sys.stdout.flush()
-        sleep(1)
+        
         
         estado_funcion = verificar_asociacion(conectar_a, essid, password)
         
@@ -855,7 +863,7 @@ def configurar_supplicant(conectar_a, essid, password):
     """
     print("Configurando WPA Supplicant...", end="")
     sys.stdout.flush()
-    sleep(1)
+    
 
     if (conectar_a == 0):
         print(Fore.RED + " error: no seas trolo man, decime a qué red te queres conectar")
@@ -954,7 +962,7 @@ def configurar_supplicant(conectar_a, essid, password):
 def obtener_ip():
     print("Obteniendo dirección IP...", end="")
     sys.stdout.flush()
-    sleep(1)
+    
     try:
         tmp = sp.run(['dhclient', '-4', info_red['tarjeta']], stdout = sp.PIPE, stderr = sp.PIPE)
     except:
@@ -982,7 +990,7 @@ def autoconectar_redes():
     
     print("Buscando redes ya configuradas...", end="")
     sys.stdout.flush()
-    sleep(1)
+    
     
     # parsear wpa_supplicant.conf
     try: fp = open(supplicant_conf, "r")
@@ -1051,7 +1059,7 @@ def autoconectar():
     
     print("Intentando autoconexión...", end="")
     sys.stdout.flush()
-    sleep(1)
+    
     
 #    AUTOCONECTAR = False
     if (AUTOCONECTAR != True):
@@ -1094,7 +1102,6 @@ def autoconectar():
     
     verificar_conexion()
     return 0
-#    salir()
     
 def verificar_conexion():
     """ Verifica que la conexión a la red es correcta.
@@ -1103,9 +1110,11 @@ def verificar_conexion():
     """
     print("Verificando la conexión...", end="")
     sys.stdout.flush()
-    sleep(1)
 
-    
+    if (not verif_conexion):
+        print(Fore.YELLOW + " omitido por usuario" + Fore.WHITE)
+        return 0
+
     enviar = 20
     enviados = 0
     recibidos = 0
@@ -1144,98 +1153,35 @@ def salir():
 
 def main(argv):
     
+#    if (debug):
+    t0 = time.time()
+    
     encabezado.setTituloAplicacion("WiFi Manager 0.3rc por @juliorollan")
     encabezado.mostrarTitulo()
     
-    # código de salida de la función llamada
-    estado_funcion = -1000
-    
-    # obtener y mostrar la info del usuario
-    estado_funcion = informacion_usuario()
-    if (estado_funcion != 0):
-        print(Fore.RED + "No se ha podido obtener la información del usuario" + Fore.WHITE)
-        salir()
+    informacion_usuario()
     mostrar_info_usuario()
-    print()
-    
-    # verificar que los comandos necesarios están disponibles
-    estado_funcion = -1000
-    estado_funcion = verificacion()
-    
-    # cargar la configuracion y leer los parámetros de línea de comandos
-    estado_funcion = -1000
-    estado_funcion = cargar_configuracion(argv)
-    if (estado_funcion != 0): salir()
-        
-    # obtener y mostrar la información de la tarjeta de red y de la conexión
+    verificacion()
+    cargar_configuracion(argv)
+    buscar_tarjetas_red()
+    mostrar_tarjetas_red()
     informacion_tarjeta_red()
     mostrar_info_tarjeta_red()
-
-    # cargar las redes previamente configuradas
-    # en caso de que devuelva un error, ignorarlo
     autoconectar_redes()
-
-    
-#    estado_funcion = -1000
-#    estado_funcion = autoconectar()
-#    if (estado_funcion == 0):
-#        print()
-#        salir()
-        
-    
-    # activar la tarjeta de red
-    estado_funcion = -1000
-    estado_funcion = activar_tarjeta()
-    if (estado_funcion != 0): salir()
-    
-    
-    # escanear redes
+#    autoconectar()
+    activar_tarjeta()
     escanear_redes()
-
-    # mostrar redes
     mostrar_redes()
-#    salir()
-    
-    # conectar a la red
-    estado_funcion = -1000
-    estado_funcion = conectar()
-    if (estado_funcion != 0):
-        print()
-        if (estado_funcion == -1): print(Fore.YELLOW + "Proceso cancelado por el usuario" + Fore.WHITE)
-    #    elif (estado_funcion == -2): print(Fore.YELLOW + "La opción de conectarse a una red sin cifrar no está disponible aún" + Fore.WHITE)
-    #    elif (estado_funcion == -3): print(Fore.YELLOW + "La opción de conectarse a una red con cifrado WEP no está disponible aún" + Fore.WHITE)
-        else: print(Fore.RED + "No se ha podido conectar a la red (" + str(estado_funcion) + ")" + Fore.WHITE)
-        salir()
-    
-    # obtener ip
-    estado_funcion = -1000
-    estado_funcion = obtener_ip()
-    if (estado_funcion != 0):
-        print()
-        print(Fore.RED + "No se ha podido obtener una dirección IP dinámica (" + str(estado_funcion) + ")" + Fore.WHITE)
-        salir()
-    
-    # mostrar info actualizada de la tarjeta de red
-    estado_funcion = -1000
-    estado_funcion = informacion_tarjeta_red()
-    if (estado_funcion != 0):
-        print(Fore.RED + "Ha ocurrido un error (" + str(estado_funcion) + ") obteniendo la información de la tarjeta de red." + Fore.WHITE)
-        print()
-        if (estado_funcion == -3): print("Asegurate que existe una tarjeta de red inalámbrica, que está instalada y funciona.")
-        salir()
+    conectar()
+    obtener_ip()
+    informacion_tarjeta_red()
     mostrar_info_tarjeta_red()
-        
-    # verificar la conexion
-    estado_funcion = -1000
-    estado_funcion = verificar_conexion()
-    if (estado_funcion == 0):
-        print(Fore.GREEN + "Se ha conectado correctamente a la red" + Fore.WHITE)
-    elif (estado_funcion == -1):
-        print(Fore.YELLOW + "Se ha conectado correctamente a la red, pero no va muuuy rápido" + Fore.WHITE)
-    elif (estado_funcion == -2):
-        print(Fore.YELLOW + "Se ha conectado correctamente a la red, pero va un poco lento" + Fore.WHITE)
+    verificar_conexion()
     
-    
+#    if (debug):
+    t1 = time.time()
+    tt = t1 - t0
+    print("Tiempo total de ejecución: ", tt, " segs")
     
     salir()
 
@@ -1257,11 +1203,13 @@ supplicant_conf = "/etc/wpa_supplicant/wpa_supplicant.conf"
 lista_apps = ['iw', 'dhclient', 'wpa_supplicant', 'ip', 'ping', 'killall']
 # contiene la información del usuario
 info_usuario = {}
-
 # tarjetas de red disponibles en el sistema
 tarjetas_disponibles = []
-indice_tarjetas = []
-
+# si en el archivo de configuración se estableció una tarjeta inalámbrica 
+# por defecto, se carga en esta variable. d
+default_nic = 0
+# verificar o no la conexión mediante el comando ping
+verif_conexion = True
 # contiene la información actual de la red
 info_red = {}
 info_red = {"ap":"-", "mac":"-", "ipv4":"-", "ipv6":"-", "tarjeta":"-", "essid":"-", "canal":0, "frecuencia":0, "existe":0}

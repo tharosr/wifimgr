@@ -16,6 +16,7 @@ Sugerencias sobre mejoras, nuevas funciones, bugs y comentarios, buscarme en tui
 distribuir.
 
 Y si, lo hice todo en español. Si alguien quiere pasar traducciones, que no sea trolo y se ponga en contacto. Yo paso de ponerme a traducir.
+I repeat: I am not in the mood to translate. Not now. Maybe another day.
 
 Obvio que todo esto se podría haber hecho mediante un simple, bueno, no tan simple shell script. Pero anda a formatear a la salida del comando iw vos.
 
@@ -26,7 +27,6 @@ REQUERIMIENTOS
 
     Python >= 3.5.3
     Módulos de Python (no incluidos):
-    	colorama
     	subprocess
     	getpass
     	re
@@ -76,11 +76,15 @@ USO
 
 OPCIONES
 
-    -a
-    	Sirve para establecer si la autoconexión se activa o no. Por defecto, viene activada y se puede modificar en config.ini.
+    -a	Autoconectar. Sirve para establecer si la autoconexión se activa o no. Por defecto, viene activada y se puede modificar en config.ini.
     	Sus valores pueden ser true o false.
-    -h
-    	Muestra una brevísima ayuda.
+
+    -n	No verificar conexión. La conexión se verifica mediante el comando ping. No verificar la conexión ahorra tiempo de ejecución (aprox 10 segs).
+    	Sus valores pueden ser true o false.
+
+    -t Nombre del sistema de la tarjeta inalámbrica a usar
+
+    -h	Muestra una brevísima ayuda.
 
 NOTAS
 
