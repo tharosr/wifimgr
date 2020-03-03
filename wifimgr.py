@@ -204,11 +204,12 @@ def buscar_tarjetas_red():
     
 def mostrar_tarjetas_red():
     """ Asigna la tarjeta a utilizar. Si hay una, es automático.
-    Si hay mas de una, muestra un selector
+    Si hay mas de una, y está configurada la opción default_nic (-t), se verifica si esa tarjeta está disponible.
+    Si no lo está, y hay mas de una, muestra un selector.
     """
     global info_red
     
-    if (default_nic != 0):
+    if (default_nic != 0) and (default_nic in tarjetas_disponibles):
         info_red['tarjeta'] = default_nic
         return 0
     
