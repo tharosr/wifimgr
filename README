@@ -36,6 +36,7 @@ REQUERIMIENTOS
     Otros módulos (incluidos):
     	titulo_aplicacion
     	formatear_salida
+    	colorama
 
     Software del sistema:
     	dhclient
